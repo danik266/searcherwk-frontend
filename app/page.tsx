@@ -174,7 +174,7 @@ export default function Home() {
     formData.append('file', file);
 
     try {
-    const res = await axios.post('https://nonmalarious-eusebia-nonformidably.ngrok-free.dev/scan', formData, {
+    const res = await axios.post('https://torquate-julie-subquadrangular.ngrok-free.dev/scan', formData, {
   headers: { 
     'Content-Type': 'multipart/form-data',
     'ngrok-skip-browser-warning': 'true'
