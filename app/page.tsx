@@ -174,9 +174,9 @@ export default function Home() {
     formData.append('file', file);
 
     try {
-      const res = await axios.post('http://127.0.0.1:8000/scan', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+    const res = await axios.post('https://searcherwk-backend.onrender.com/scan', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' },
+});
       setResult(res.data);
     } catch (err) {
       alert('Ошибка подключения (Connection Error)');
