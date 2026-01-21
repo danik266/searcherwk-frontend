@@ -188,7 +188,29 @@ export default function Home() {
       setLoading(false);
     }
   };
+const [textQuery, setTextQuery] = useState('');
 
+const handleTextSearch = async (e?: React.FormEvent) => {
+  if (e) e.preventDefault();
+  if (!textQuery.trim()) return;
+
+  setLoading(true);
+  setResult(null);
+  setPreview(null); // Сбрасываем превью фото, если ищем текстом
+
+  try {
+    const res = await axios.post('https://nonmalarious-eusebia-nonformidably.ngrok-free.dev/search-text', 
+      { query: textQuery },
+      { headers: { 'ngrok-skip-browser-warning': 'true' } }
+    );
+    setResult(res.data);
+    setTimeout(scrollToScanner, 100);
+  } catch (err) {
+    alert('Ошибка текстового поиска');
+  } finally {
+    setLoading(false);
+  }
+};
   const wbItems = result?.results.filter((i: any) => i.store === 'Wildberries') || [];
   const kaspiItems = result?.results.filter((i: any) => i.store === 'Kaspi') || [];
 
@@ -283,7 +305,23 @@ export default function Home() {
       {/* --- SCANNER SECTION --- */}
       <div ref={scannerSectionRef} className="bg-slate-50 min-h-[60vh] h-auto py-32 px-4 relative scroll-mt-20 border-y border-slate-200">
         <main className="max-w-6xl mx-auto">
-            
+            <div className="w-full max-w-3xl mx-auto mb-10">
+  <form onSubmit={handleTextSearch} className="relative group">
+    <input 
+      type="text"
+      value={textQuery}
+      onChange={(e) => setTextQuery(e.target.value)}
+      placeholder="Введите название товара (например: iPhone 15 Pro)"
+      className="w-full bg-white border-2 border-slate-200 rounded-2xl py-5 px-6 pr-16 text-lg focus:border-purple-500 outline-none transition-all shadow-sm focus:shadow-xl focus:shadow-purple-500/10"
+    />
+    <button 
+      type="submit"
+      className="absolute right-3 top-1/2 -translate-y-1/2 bg-slate-900 text-white p-3 rounded-xl hover:bg-purple-600 transition-all"
+    >
+      <Search size={24} />
+    </button>
+  </form>
+</div>
             {/* INPUT AREA */}
             <div className="flex flex-col items-center justify-center mb-20">
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
