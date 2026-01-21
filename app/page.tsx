@@ -174,8 +174,12 @@ export default function Home() {
     formData.append('file', file);
 
     try {
-    const res = await axios.post('https://searcherwk-backend.onrender.com/scan', formData, {
-  headers: { 'Content-Type': 'multipart/form-data' },
+    const res = await axios.post('https://nonmalarious-eusebia-nonformidably.ngrok-free.dev/scan', formData, {
+  headers: { 
+    'Content-Type': 'multipart/form-data',
+    'ngrok-skip-browser-warning': 'true'
+  },
+  
 });
       setResult(res.data);
     } catch (err) {
