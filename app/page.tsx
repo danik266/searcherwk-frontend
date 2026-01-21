@@ -189,28 +189,42 @@ export default function Home() {
     }
   };
 const [textQuery, setTextQuery] = useState('');
+const [textLoading, setTextLoading] = useState(false);
 
+// Функция поиска по тексту
 const handleTextSearch = async (e?: React.FormEvent) => {
-  if (e) e.preventDefault();
-  if (!textQuery.trim()) return;
+    if (e) e.preventDefault();
+    if (!textQuery.trim() || textLoading) return;
 
-  setLoading(true);
-  setResult(null);
-  setPreview(null); // Сбрасываем превью фото, если ищем текстом
+    setTextLoading(true); // Включаем загрузку
+    setResult(null);
+    setPreview(null);
 
-  try {
-    const res = await axios.post('https://nonmalarious-eusebia-nonformidably.ngrok-free.dev/search-text', 
-      { query: textQuery },
-      { headers: { 'ngrok-skip-browser-warning': 'true' } }
-    );
-    setResult(res.data);
-    setTimeout(scrollToScanner, 100);
-  } catch (err) {
-    alert('Ошибка текстового поиска');
-  } finally {
-    setLoading(false);
-  }
+    try {
+        const res = await axios.post('https://nonmalarious-eusebia-nonformidably.ngrok-free.dev/search-text', 
+            { query: textQuery },
+            { headers: { 'ngrok-skip-browser-warning': 'true' } }
+        );
+        setResult(res.data);
+        setTimeout(scrollToScanner, 100);
+    } catch (err) {
+        alert('Ошибка поиска');
+    } finally {
+        setTextLoading(false); // Выключаем загрузку
+    }
 };
+
+const clearAll = () => {
+    setTextQuery('');
+    setPreview(null);
+    setImage(null);
+    setResult(null);
+};
+
+// Проверяем, заблокировано ли фото (если есть текст или идет поиск по тексту)
+const isPhotoDisabled = textQuery.length > 0 || textLoading;
+// Проверяем, заблокирован ли текст (если уже загружено фото)
+const isTextDisabled = preview !== null || loading;
   const wbItems = result?.results.filter((i: any) => i.store === 'Wildberries') || [];
   const kaspiItems = result?.results.filter((i: any) => i.store === 'Kaspi') || [];
 
@@ -305,60 +319,103 @@ const handleTextSearch = async (e?: React.FormEvent) => {
       {/* --- SCANNER SECTION --- */}
       <div ref={scannerSectionRef} className="bg-slate-50 min-h-[60vh] h-auto py-32 px-4 relative scroll-mt-20 border-y border-slate-200">
         <main className="max-w-6xl mx-auto">
-            <div className="w-full max-w-3xl mx-auto mb-10">
-  <form onSubmit={handleTextSearch} className="relative group">
-    <input 
-      type="text"
-      value={textQuery}
-      onChange={(e) => setTextQuery(e.target.value)}
-      placeholder="Введите название товара (например: iPhone 15 Pro)"
-      className="w-full bg-white border-2 border-slate-200 rounded-2xl py-5 px-6 pr-16 text-lg focus:border-purple-500 outline-none transition-all shadow-sm focus:shadow-xl focus:shadow-purple-500/10"
-    />
-    <button 
-      type="submit"
-      className="absolute right-3 top-1/2 -translate-y-1/2 bg-slate-900 text-white p-3 rounded-xl hover:bg-purple-600 transition-all"
-    >
-      <Search size={24} />
-    </button>
-  </form>
-</div>
-            {/* INPUT AREA */}
-            <div className="flex flex-col items-center justify-center mb-20">
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-                {preview ? (
-                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative group w-80 h-80 rounded-[2rem] overflow-hidden shadow-2xl shadow-purple-900/10 ring-8 ring-white bg-white">
-                        <img src={preview} className="w-full h-full object-cover" />
-                        {loading && (
-                            <div className="absolute inset-0 bg-white/60 backdrop-blur-md flex flex-col items-center justify-center z-10">
-                                <div className="w-16 h-16 border-4 border-slate-200 border-t-purple-600 rounded-full animate-spin mb-6"/>
-                                <p className="text-sm font-bold text-slate-800 tracking-widest uppercase animate-pulse">{t.scanning}</p>
-                            </div>
-                        )}
-                        {!loading && (
-                            <button onClick={() => fileInputRef.current?.click()} className="absolute bottom-6 right-6 bg-slate-900 text-white p-4 rounded-2xl shadow-xl hover:scale-105 hover:bg-purple-600 transition-all z-20">
-                                <Camera size={24} />
+            <div className="w-full max-w-3xl mx-auto mb-10 px-4">
+            <form onSubmit={handleTextSearch} className="relative group">
+                <div className="relative flex items-center">
+                    <input 
+                        type="text"
+                        value={textQuery}
+                        onChange={(e) => setTextQuery(e.target.value)}
+                        disabled={isTextDisabled} // Блокируется только если УЖЕ загружено ФОТО
+                        placeholder={isTextDisabled ? "Удалите фото для поиска текстом" : "Название товара..."}
+                        className={`w-full bg-white border-2 rounded-2xl py-5 px-6 pr-28 text-lg outline-none transition-all shadow-sm 
+                            ${isTextDisabled 
+                                ? 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed' 
+                                : 'border-slate-200 focus:border-purple-500 focus:shadow-xl focus:shadow-purple-500/10'}`}
+                    />
+                    
+                    <div className="absolute right-3 flex items-center gap-2">
+                        {/* Кнопка отмены/очистки */}
+                        {(textQuery.length > 0 || preview) && (
+                            <button 
+                                type="button"
+                                onClick={clearAll}
+                                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                                title="Очистить всё"
+                            >
+                                <Plus className="rotate-45" size={24} />
                             </button>
                         )}
-                    </motion.div>
-                ) : (
-                    <div className="flex flex-col items-center w-full">
-                        <div onClick={() => fileInputRef.current?.click()} className="w-full max-w-3xl h-72 border-2 border-dashed border-slate-300 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer hover:border-purple-400 hover:bg-purple-50/50 transition-all group bg-white relative overflow-hidden shadow-sm hover:shadow-md">
-                            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none"></div>
-                            <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center mb-6 group-hover:bg-white group-hover:scale-110 group-hover:shadow-xl transition-all duration-300">
-                                <Camera size={32} className="text-slate-400 group-hover:text-purple-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-slate-700 group-hover:text-purple-900 transition-colors">{t.uploadTitle}</h3>
-                            <p className="text-slate-400 mt-2 font-medium">{t.uploadDesc}</p>
-                        </div>
-                        <motion.p 
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-                            className="mt-8 text-slate-400 font-bold uppercase tracking-[0.2em] text-sm animate-pulse flex items-center gap-2"
+
+                        {/* Кнопка поиска */}
+                        <button 
+                            type="submit"
+                            disabled={isTextDisabled || textLoading || !textQuery.trim()}
+                            className={`p-3 rounded-xl transition-all flex items-center justify-center min-w-[48px]
+                                ${textLoading ? 'bg-purple-100' : 'bg-slate-900 text-white hover:bg-purple-600'}
+                                ${isTextDisabled ? 'hidden' : 'flex'}`} // Скрываем только если активен режим фото
                         >
-                            <ArrowRight size={16} /> {t.tryNowHint}
-                        </motion.p>
+                            {textLoading ? (
+                                <motion.div 
+                                    animate={{ rotate: 360 }}
+                                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                                    className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full"
+                                />
+                            ) : (
+                                <Search size={24} />
+                            )}
+                        </button>
                     </div>
-                )}
-            </div>
+                </div>
+            </form>
+        </div>
+            {/* INPUT AREA */}
+            <div className={`relative flex flex-col items-center justify-center mb-20 transition-all duration-500 
+            ${isPhotoDisabled ? 'opacity-30 grayscale pointer-events-none' : 'opacity-100'}`}>
+            
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                accept="image/*" 
+                className="hidden" 
+                disabled={isPhotoDisabled} 
+            />
+
+            {/* Сообщение-подсказка при блокировке */}
+            {isPhotoDisabled && !textLoading && (
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                    <span className="text-[10px] font-black uppercase tracking-tighter text-purple-600 bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
+                        Активен текстовый поиск
+                    </span>
+                </div>
+            )}
+
+            {preview ? (
+                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative group w-80 h-80 rounded-[2rem] overflow-hidden shadow-2xl ring-8 ring-white bg-white">
+                    <img src={preview} className="w-full h-full object-cover" alt="Preview" />
+                    {loading && (
+                        <div className="absolute inset-0 bg-white/60 backdrop-blur-md flex flex-col items-center justify-center z-10">
+                            <div className="w-16 h-16 border-4 border-slate-200 border-t-purple-600 rounded-full animate-spin mb-6"/>
+                            <p className="text-sm font-bold text-slate-800 uppercase animate-pulse">{t.scanning}</p>
+                        </div>
+                    )}
+                </motion.div>
+            ) : (
+                <div className="flex flex-col items-center w-full">
+                    <div 
+                        onClick={() => !isPhotoDisabled && fileInputRef.current?.click()} 
+                        className="w-full max-w-3xl h-72 border-2 border-dashed border-slate-300 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer hover:border-purple-400 hover:bg-purple-50/50 transition-all group bg-white relative overflow-hidden"
+                    >
+                        <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 transition-all">
+                            <Camera size={32} className="text-slate-400 group-hover:text-purple-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-700">{t.uploadTitle}</h3>
+                        <p className="text-slate-400 mt-2">{t.uploadDesc}</p>
+                    </div>
+                </div>
+            )}
+        </div>
 
             {/* RESULTS AREA */}
             <AnimatePresence mode="wait">
